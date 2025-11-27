@@ -1,11 +1,19 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Safe access to process.env.API_KEY to prevent 'process is not defined' errors in browser
-const apiKey = (typeof process !== 'undefined' && process.env) 
-  ? process.env.API_KEY 
-  : '';
+// Lazy initialization to avoid top-level crashes if environment is unstable
+let aiInstance: GoogleGenAI | null = null;
 
-const ai = new GoogleGenAI({ apiKey });
+const getAI = () => {
+  if (!aiInstance) {
+    const apiKey = (typeof process !== 'undefined' && process.env && process.env.API_KEY) 
+      ? process.env.API_KEY 
+      : '';
+      
+    // Create instance even with empty key to allow app to load, will fail on call if key missing
+    aiInstance = new GoogleGenAI({ apiKey });
+  }
+  return aiInstance;
+};
 
 /**
  * Extracts text from a document image or PDF using Gemini Vision.
@@ -16,7 +24,7 @@ export const extractTextFromDocument = async (
   mimeType: string
 ): Promise<string> => {
   try {
-    // Using Flash for fast OCR
+    const ai = getAI();
     const modelId = 'gemini-2.5-flash';
 
     const response = await ai.models.generateContent({
@@ -53,12 +61,11 @@ export const analyzeDocumentContent = async (
   mimeType?: string
 ): Promise<string> => {
   try {
-    // Using Pro with Thinking for deep analysis
+    const ai = getAI();
     const modelId = 'gemini-3-pro-preview';
     
     const parts: any[] = [{ text: `Analyze this document content:\n\n${text}\n\nProvide a structured summary including:\n1. Document Type\n2. Key Dates\n3. Main Entities (People/Companies)\n4. Action Items or Summary` }];
 
-    // If we have the original image, include it for better context
     if (base64Data && mimeType) {
       parts.unshift({
         inlineData: {
@@ -73,7 +80,7 @@ export const analyzeDocumentContent = async (
       contents: { parts },
       config: {
         thinkingConfig: {
-          thinkingBudget: 32768 // Maximum thinking budget
+          thinkingBudget: 32768
         }
       }
     });
