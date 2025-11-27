@@ -35,7 +35,9 @@ export const ResultView: React.FC<ResultViewProps> = ({ doc, onBack, onAnalyze, 
     const fileName = `documind-${doc.id}.txt`;
     const file = new File([doc.textData], fileName, { type: 'text/plain' });
 
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    // Check if navigator.share and file sharing is supported
+    // @ts-ignore - navigator.canShare is not fully typed in all environments yet
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({
           files: [file],
@@ -45,12 +47,12 @@ export const ResultView: React.FC<ResultViewProps> = ({ doc, onBack, onAnalyze, 
         return;
       } catch (err) {
         console.log('Share sheet dismissed or error', err);
-        // If share fails, fall back to download
+        // If share fails or is cancelled, do nothing (user action)
       }
-    } 
-    
-    // Fallback for desktop or non-supported browsers
-    handleDownload();
+    } else {
+       // Fallback for desktop or non-supported browsers
+       handleDownload();
+    }
   };
 
   const handleShare = async () => {

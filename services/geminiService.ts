@@ -1,6 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
 
-const apiKey = process.env.API_KEY || '';
+// Safe access to process.env.API_KEY to prevent 'process is not defined' errors in browser
+const apiKey = (typeof process !== 'undefined' && process.env) 
+  ? process.env.API_KEY 
+  : '';
+
 const ai = new GoogleGenAI({ apiKey });
 
 /**
