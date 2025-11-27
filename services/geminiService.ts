@@ -5,14 +5,15 @@ const ai = new GoogleGenAI({ apiKey });
 
 /**
  * Extracts text from a document image or PDF using Gemini Vision.
- * Uses gemini-3-pro-preview as requested for image understanding.
+ * Uses gemini-2.5-flash for speed and low latency (best for OCR).
  */
 export const extractTextFromDocument = async (
   base64Data: string, 
   mimeType: string
 ): Promise<string> => {
   try {
-    const modelId = 'gemini-3-pro-preview';
+    // Using Flash for fast OCR
+    const modelId = 'gemini-2.5-flash';
 
     const response = await ai.models.generateContent({
       model: modelId,
@@ -25,7 +26,7 @@ export const extractTextFromDocument = async (
             }
           },
           {
-            text: "You are a professional OCR engine. Transcribe the text from this document exactly as it appears. Do not add any conversational filler. Maintain the structure (lists, headers) using Markdown."
+            text: "Transcribe the text from this document exactly as it appears. Maintain the structure (lists, headers) using Markdown. Do not include any intro or outro text."
           }
         ]
       }
@@ -40,7 +41,7 @@ export const extractTextFromDocument = async (
 
 /**
  * Analyzes the extracted text or the original document for deeper insights.
- * Uses thinking budget as requested for complex queries.
+ * Uses gemini-3-pro-preview with thinking budget for complex reasoning.
  */
 export const analyzeDocumentContent = async (
   text: string,
@@ -48,7 +49,7 @@ export const analyzeDocumentContent = async (
   mimeType?: string
 ): Promise<string> => {
   try {
-    // We use gemini-3-pro-preview with thinking config
+    // Using Pro with Thinking for deep analysis
     const modelId = 'gemini-3-pro-preview';
     
     const parts: any[] = [{ text: `Analyze this document content:\n\n${text}\n\nProvide a structured summary including:\n1. Document Type\n2. Key Dates\n3. Main Entities (People/Companies)\n4. Action Items or Summary` }];
@@ -68,7 +69,7 @@ export const analyzeDocumentContent = async (
       contents: { parts },
       config: {
         thinkingConfig: {
-          thinkingBudget: 16000 // Allocating significant budget for analysis, max is 32768 but 16k is usually sufficient for docs
+          thinkingBudget: 32768 // Maximum thinking budget
         }
       }
     });

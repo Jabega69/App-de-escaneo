@@ -11,6 +11,13 @@
         font-family: 'Inter', sans-serif;
         background-color: #f2f2f7; /* iOS system gray */
         -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        user-select: none;
+      }
+      /* Allow text selection in the content area */
+      .select-text {
+        user-select: text;
+        -webkit-user-select: text;
       }
       /* Hide scrollbar for clean mobile look */
       .no-scrollbar::-webkit-scrollbar {
@@ -19,6 +26,27 @@
       .no-scrollbar {
         -ms-overflow-style: none;
         scrollbar-width: none;
+      }
+      
+      /* Custom Animations */
+      @keyframes fadeInUp {
+        from { opacity: 0; transform: translate3d(0, 20px, 0); }
+        to { opacity: 1; transform: none; }
+      }
+      .animate-fade-in-up {
+        animation: fadeInUp 0.5s ease-out;
+      }
+      
+      .animate-pulse-slow {
+        animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+      
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      .animate-spin-slow {
+        animation: spin 3s linear infinite;
       }
     </style>
   <script type="importmap">

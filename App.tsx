@@ -4,7 +4,7 @@ import { Scanner } from './components/Scanner';
 import { ProcessingView } from './components/ProcessingView';
 import { ResultView } from './components/ResultView';
 import { extractTextFromDocument, analyzeDocumentContent } from './services/geminiService';
-import { Plus, Clock, FileText, ChevronRight } from 'lucide-react';
+import { Plus, Clock, FileText, ChevronRight, ArrowLeft } from 'lucide-react';
 
 // Helper to convert File to Base64
 const fileToBase64 = (file: File): Promise<string> => {
@@ -28,6 +28,7 @@ const App: React.FC = () => {
   const [documents, setDocuments] = useState<ScannedDoc[]>([]);
   const [currentDoc, setCurrentDoc] = useState<ScannedDoc | null>(null);
   const [rawFile, setRawFile] = useState<{data: string, mimeType: string} | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Load from local storage on mount
   useEffect(() => {
@@ -72,24 +73,10 @@ const App: React.FC = () => {
       setView(ViewState.RESULT);
 
     } catch (error) {
+      console.error(error);
       setProcessing({ status: 'error', message: 'Failed to process document. Please try again.' });
       setTimeout(() => setView(ViewState.HOME), 3000);
     }
-  };
-
-  const handleAnalyze = async () => {
-    if (!currentDoc) return;
-    
-    // Check if we already have analysis
-    if (currentDoc.analysis) return;
-
-    setProcessing({ status: 'thinking', message: 'Gemini is thinking deeply...' });
-    // We update UI locally first to show spinner in ResultView, but here we actually manage the async call
-    // However, ResultView handles its own loading state for the tab switch visually.
-    // Let's pass a prop to ResultView instead of changing global view if we want to keep context.
-    // Actually, let's keep it simple: ResultView has an `isAnalyzing` prop.
-    
-    // We don't change `view` here, we just update state passed to ResultView
   };
 
   const performAnalysis = async () => {
@@ -110,8 +97,6 @@ const App: React.FC = () => {
       alert("Analysis failed. Please check your API key quota.");
     }
   };
-
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const onAnalyzeRequest = async () => {
     setIsAnalyzing(true);
@@ -153,7 +138,7 @@ const App: React.FC = () => {
                 key={doc.id}
                 onClick={() => {
                   setCurrentDoc(doc);
-                  setRawFile(null); // Clear raw file if loading from history (saves memory, logic handles missing raw file gracefully)
+                  setRawFile(null); // Clear raw file if loading from history
                   setView(ViewState.RESULT);
                 }}
                 className="w-full bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:bg-slate-50 transition-colors text-left group"
@@ -193,8 +178,8 @@ const App: React.FC = () => {
       {view === ViewState.SCANNING && (
         <div className="h-full flex flex-col">
            <header className="px-4 py-3 bg-white border-b border-slate-100 flex items-center">
-             <button onClick={() => setView(ViewState.HOME)} className="p-2 -ml-2 text-slate-600">
-               <ArrowLeft size={24} /> {/* Need to import ArrowLeft locally or reuse from ResultView */}
+             <button onClick={() => setView(ViewState.HOME)} className="p-2 -ml-2 text-slate-600 hover:text-slate-900">
+               <ArrowLeft size={24} />
              </button>
              <span className="font-semibold ml-2">New Scan</span>
            </header>
@@ -217,8 +202,5 @@ const App: React.FC = () => {
     </div>
   );
 };
-
-// Re-importing ArrowLeft for the inline usage above to avoid TS error
-import { ArrowLeft } from 'lucide-react';
 
 export default App;

@@ -27,6 +27,30 @@ export const ResultView: React.FC<ResultViewProps> = ({ doc, onBack, onAnalyze, 
     element.download = `documind-${doc.title}.txt`;
     document.body.appendChild(element);
     element.click();
+    document.body.removeChild(element);
+  };
+
+  const handleSaveToDrive = async () => {
+    // Enhanced sharing logic for iOS to support "Save to Files/Drive" directly
+    const fileName = `documind-${doc.id}.txt`;
+    const file = new File([doc.textData], fileName, { type: 'text/plain' });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: doc.title,
+          text: 'Scanned document from DocuMind',
+        });
+        return;
+      } catch (err) {
+        console.log('Share sheet dismissed or error', err);
+        // If share fails, fall back to download
+      }
+    } 
+    
+    // Fallback for desktop or non-supported browsers
+    handleDownload();
   };
 
   const handleShare = async () => {
@@ -86,7 +110,7 @@ export const ResultView: React.FC<ResultViewProps> = ({ doc, onBack, onAnalyze, 
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
-        <div className="bg-white rounded-2xl shadow-sm p-5 min-h-[300px] text-slate-700 whitespace-pre-wrap leading-relaxed border border-slate-100">
+        <div className="bg-white rounded-2xl shadow-sm p-5 min-h-[300px] text-slate-700 whitespace-pre-wrap leading-relaxed border border-slate-100 select-text">
           {activeTab === 'text' ? (
             doc.textData
           ) : (
@@ -94,7 +118,7 @@ export const ResultView: React.FC<ResultViewProps> = ({ doc, onBack, onAnalyze, 
               <div className="flex flex-col items-center justify-center h-48 text-purple-600 space-y-3">
                 <Sparkles className="animate-spin" size={32} />
                 <p className="text-sm font-medium">Analyzing with Gemini Pro...</p>
-                <p className="text-xs text-purple-400">Thinking budget: 16k tokens</p>
+                <p className="text-xs text-purple-400">Thinking budget: 32k tokens</p>
               </div>
             ) : (
               doc.analysis || (
@@ -117,7 +141,7 @@ export const ResultView: React.FC<ResultViewProps> = ({ doc, onBack, onAnalyze, 
             {copied ? <span className="text-green-600">Copied!</span> : <><Copy size={18} /> Copy Text</>}
           </button>
           <button
-            onClick={handleDownload}
+            onClick={handleSaveToDrive}
             className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-3 rounded-xl transition-colors shadow-blue-200 shadow-lg"
           >
             <Cloud size={18} />
@@ -125,7 +149,7 @@ export const ResultView: React.FC<ResultViewProps> = ({ doc, onBack, onAnalyze, 
           </button>
         </div>
         <p className="text-center text-xs text-slate-400 mt-3">
-          "Save to Drive" downloads the text file. Save to Files &gt; Drive on iOS.
+          Opens share sheet. Select "Drive" or "Save to Files".
         </p>
       </div>
     </div>
