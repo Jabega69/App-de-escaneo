@@ -1,0 +1,7 @@
+{
+  "name": "DocuMind Scan",
+  "description": "An intelligent document scanner that converts PDFs and images to text, analyzes content with advanced reasoning, and prepares it for your Drive.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
