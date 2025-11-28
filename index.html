@@ -173,7 +173,8 @@
     const extractTextFromDocument = async (base64Data, mimeType) => {
       try {
         const ai = getAI();
-        const modelId = 'gemini-1.5-flash';
+        // Updated to gemini-2.0-flash as 1.5 might be deprecated/retired
+        const modelId = 'gemini-2.0-flash';
         const response = await ai.models.generateContent({
           model: modelId,
           contents: {
@@ -194,7 +195,7 @@
     const analyzeDocumentContent = async (text, base64Data, mimeType) => {
       try {
         const ai = getAI();
-        const modelId = 'gemini-1.5-pro';
+        const modelId = 'gemini-2.0-flash'; // Use 2.0 Flash for analysis too
 
         const parts = [{ text: `Analyze this document content:\n\n${text}\n\nProvide a structured summary including:\n1. Document Type\n2. Key Dates\n3. Main Entities (People/Companies)\n4. Action Items or Summary` }];
 
@@ -643,7 +644,7 @@
                 </div>
                 <h1 className="text-2xl font-bold text-slate-800 tracking-tight">DocuMind</h1>
               </div>
-              <p className="text-slate-500 text-sm font-medium">AI-Powered Document Scanner v1.0.2</p>
+              <p className="text-slate-500 text-sm font-medium">AI-Powered Document Scanner v1.0.3</p>
             </div>
             <button
               onClick={() => setView('SETTINGS')}
