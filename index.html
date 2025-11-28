@@ -186,7 +186,8 @@
         return response.text || "No text could be extracted.";
       } catch (error) {
         console.error("Gemini OCR Error:", error);
-        throw new Error(error.message || "Failed to extract text.");
+        const errorDetails = error instanceof Error ? error.message : JSON.stringify(error);
+        throw new Error(errorDetails || "Failed to extract text (Unknown Error)");
       }
     };
 
@@ -642,7 +643,7 @@
                 </div>
                 <h1 className="text-2xl font-bold text-slate-800 tracking-tight">DocuMind</h1>
               </div>
-              <p className="text-slate-500 text-sm font-medium">AI-Powered Document Scanner</p>
+              <p className="text-slate-500 text-sm font-medium">AI-Powered Document Scanner v1.0.2</p>
             </div>
             <button
               onClick={() => setView('SETTINGS')}
