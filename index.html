@@ -326,6 +326,15 @@
               Thinking Budget Active
             </div>
           )}
+
+          {state.status === 'error' && (
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 px-6 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium"
+            >
+              Go Back
+            </button>
+          )}
         </div>
       );
     };
@@ -586,9 +595,15 @@
           setView('RESULT');
 
         } catch (error) {
-          console.error(error);
-          setProcessing({ status: 'error', message: 'Failed to process document. Please try again.' });
-          setTimeout(() => setView('HOME'), 3000);
+          console.error("Processing Error:", error);
+          let errorMsg = error.message || "Unknown error";
+          if (errorMsg.includes("404")) errorMsg = "Model not found. Check model name.";
+          if (errorMsg.includes("403") || errorMsg.includes("API key")) errorMsg = "Invalid API Key. Check Settings.";
+          if (errorMsg.includes("429")) errorMsg = "Quota exceeded. Try again later.";
+
+          setProcessing({ status: 'error', message: `Error: ${errorMsg}` });
+          // Don't auto-dismiss error so user can read it
+          // setTimeout(() => setView('HOME'), 3000);
         }
       };
 
