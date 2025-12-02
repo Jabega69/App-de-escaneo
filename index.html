@@ -577,11 +577,17 @@
 
         try {
           const base64Data = await fileToBase64(file);
-          setRawFile({ data: base64Data, mimeType: file.type });
+
+          // Fix for camera captures on some devices where file.type might be empty
+          // Default to image/jpeg if type is missing, as that's the standard for camera captures
+          const mimeType = file.type || 'image/jpeg';
+          console.log(`Processing file: ${file.name}, Size: ${file.size}, Type: ${file.type || '(missing)'}, Using: ${mimeType}`);
+
+          setRawFile({ data: base64Data, mimeType: mimeType });
 
           setProcessing({ status: 'ocr', message: 'Extracting text with Gemini Vision...' });
 
-          const text = await extractTextFromDocument(base64Data, file.type);
+          const text = await extractTextFromDocument(base64Data, mimeType);
 
           const newDoc = {
             id: Date.now().toString(),
