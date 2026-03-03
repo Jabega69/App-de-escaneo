@@ -175,7 +175,7 @@
     const extractTextFromDocument = async (base64Data, mimeType) => {
       try {
         const ai = getAI();
-        const modelId = 'gemini-1.5-flash';
+        const modelId = 'gemini-2.0-flash';
         const response = await ai.models.generateContent({
           model: modelId,
           contents: [{
@@ -189,7 +189,8 @@
         return response.text || "No se pudo extraer ningún texto.";
       } catch (error) {
         console.error("Gemini OCR Error:", error);
-        throw new Error("Error al extraer el texto.");
+        // Re-throw the original error to see the real message
+        throw error;
       }
     };
 
@@ -214,7 +215,7 @@
         return response.text || "El análisis falló.";
       } catch (error) {
         console.error("Gemini Analysis Error:", error);
-        throw new Error("Error al analizar el documento.");
+        throw error;
       }
     };
 
