@@ -4,23 +4,11 @@ import { Camera, FileText, Upload, Loader2, Sparkles, BrainCircuit, Copy, Share,
 
 // --- SERVICE ---
 
-const getApiKey = () => {
+const getApiKey = (): string => {
     // @ts-ignore
-    const apiKey = (typeof __GEMINI_API_KEY__ !== 'undefined' ? __GEMINI_API_KEY__ : '') ||
+    const apiKey: string = (typeof __GEMINI_API_KEY__ !== 'undefined' ? __GEMINI_API_KEY__ : '') ||
         // @ts-ignore
-        (import.meta.env.VITE_GEMINI_API_KEY) ||
-        // @ts-ignore
-        (typeof window !== 'undefined' ? window.__GEMINI_API_KEY__ : '') || '';
-
-    console.log("Debug - API Key source check:",
-        // @ts-ignore
-        typeof __GEMINI_API_KEY__ !== 'undefined' ? "global" :
-            (import.meta.env.VITE_GEMINI_API_KEY ? "env" :
-                // @ts-ignore
-                (typeof window !== 'undefined' && window.__GEMINI_API_KEY__ ? "window" : "none")));
-
-    console.log("Debug - API Key length:", apiKey ? apiKey.length : 0);
-    console.log("Debug - API Key prefix:", apiKey ? apiKey.substring(0, 4) + "..." : "empty");
+        (import.meta.env.VITE_GEMINI_API_KEY) || '';
 
     if (!apiKey || apiKey === 'undefined' || apiKey.trim() === '') {
         throw new Error("Clave API no encontrada. Verifica los Secrets de GitHub (GEMINI_API_KEY).");
@@ -28,45 +16,55 @@ const getApiKey = () => {
     return apiKey.trim();
 };
 
-const extractTextFromDocument = async (base64Data, mimeType) => {
+const extractTextFromDocument = async (base64Data: string, mimeType: string): Promise<string> => {
     try {
         const apiKey = getApiKey();
-        const genAI = new GoogleGenAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const ai = new GoogleGenAI({ apiKey });
 
-        const result = await model.generateContent([
-            { inlineData: { mimeType: mimeType, data: base64Data } },
-            { text: "Transcribe el texto de este documento exactamente como aparece. Mantén la estructura (listas, encabezados) usando Markdown. No incluyas ningún texto de introducción o cierre." }
-        ]);
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.0-flash',
+            contents: [
+                {
+                    role: 'user',
+                    parts: [
+                        { inlineData: { mimeType: mimeType, data: base64Data } },
+                        { text: "Transcribe el texto de este documento exactamente como aparece. Mantén la estructura (listas, encabezados) usando Markdown. No incluyas ningún texto de introducción o cierre." }
+                    ]
+                }
+            ]
+        });
 
-        const response = await result.response;
-        return response.text() || "No se pudo extraer ningún texto.";
+        return response.text || "No se pudo extraer ningún texto.";
     } catch (error) {
         console.error("Gemini OCR Error:", error);
         throw error;
     }
 };
 
-const analyzeDocumentContent = async (text, base64Data, mimeType) => {
+const analyzeDocumentContent = async (text: string, base64Data?: string, mimeType?: string): Promise<string> => {
     try {
         const apiKey = getApiKey();
-        const genAI = new GoogleGenAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+        const ai = new GoogleGenAI({ apiKey });
 
-        const promptParts = [
+        const parts: any[] = [
             { text: `Analiza el contenido de este documento:\n\n${text}\n\nProporciona un resumen estructurado que incluya:\n1. Tipo de Documento\n2. Fechas Clave\n3. Entidades Principales (Personas/Empresas)\n4. Tareas Pendientes o Resumen` }
         ];
 
         if (base64Data && mimeType) {
-            // @ts-ignore
-            promptParts.unshift({
-                inlineData: { mimeType: mimeType, data: base64Data }
-            });
+            parts.unshift({ inlineData: { mimeType: mimeType, data: base64Data } });
         }
 
-        const result = await model.generateContent(promptParts);
-        const response = await result.response;
-        return response.text() || "El análisis falló.";
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.0-flash',
+            contents: [
+                {
+                    role: 'user',
+                    parts: parts
+                }
+            ]
+        });
+
+        return response.text || "El análisis falló.";
     } catch (error) {
         console.error("Gemini Analysis Error:", error);
         throw error;
