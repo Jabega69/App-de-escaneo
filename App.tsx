@@ -1,75 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GoogleGenAI } from "@google/genai";
+import { extractTextFromDocument, analyzeDocumentContent } from './services/geminiService';
 import { Camera, FileText, Upload, Loader2, Sparkles, BrainCircuit, Copy, Share, ArrowLeft, Download, Cloud, ChevronRight, Plus, Clock } from 'lucide-react';
-
-// --- SERVICE ---
-
-const getApiKey = (): string => {
-    // @ts-ignore
-    const apiKey: string = (typeof __GEMINI_API_KEY__ !== 'undefined' ? __GEMINI_API_KEY__ : '') ||
-        // @ts-ignore
-        (import.meta.env.VITE_GEMINI_API_KEY) || '';
-
-    if (!apiKey || apiKey === 'undefined' || apiKey.trim() === '') {
-        throw new Error("Clave API no encontrada. Verifica los Secrets de GitHub (GEMINI_API_KEY).");
-    }
-    return apiKey.trim();
-};
-
-const extractTextFromDocument = async (base64Data: string, mimeType: string): Promise<string> => {
-    try {
-        const apiKey = getApiKey();
-        const ai = new GoogleGenAI({ apiKey });
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
-            contents: [
-                {
-                    role: 'user',
-                    parts: [
-                        { inlineData: { mimeType: mimeType, data: base64Data } },
-                        { text: "Transcribe el texto de este documento exactamente como aparece. Mantén la estructura (listas, encabezados) usando Markdown. No incluyas ningún texto de introducción o cierre." }
-                    ]
-                }
-            ]
-        });
-
-        return response.text || "No se pudo extraer ningún texto.";
-    } catch (error) {
-        console.error("Gemini OCR Error:", error);
-        throw error;
-    }
-};
-
-const analyzeDocumentContent = async (text: string, base64Data?: string, mimeType?: string): Promise<string> => {
-    try {
-        const apiKey = getApiKey();
-        const ai = new GoogleGenAI({ apiKey });
-
-        const parts: any[] = [
-            { text: `Analiza el contenido de este documento:\n\n${text}\n\nProporciona un resumen estructurado que incluya:\n1. Tipo de Documento\n2. Fechas Clave\n3. Entidades Principales (Personas/Empresas)\n4. Tareas Pendientes o Resumen` }
-        ];
-
-        if (base64Data && mimeType) {
-            parts.unshift({ inlineData: { mimeType: mimeType, data: base64Data } });
-        }
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
-            contents: [
-                {
-                    role: 'user',
-                    parts: parts
-                }
-            ]
-        });
-
-        return response.text || "El análisis falló.";
-    } catch (error) {
-        console.error("Gemini Analysis Error:", error);
-        throw error;
-    }
-};
 
 // --- HELPERS ---
 
@@ -376,11 +307,16 @@ const App = () => {
             setProcessing({ status: 'complete' });
             setView('RESULT');
 
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
+            const isRateLimit = error?.message?.includes('429') || error?.status === 429 || error?.code === 429;
+            const errorMessage = isRateLimit
+                ? "Límite de cuota excedido. Por favor, espera un momento y vuelve a intentarlo."
+                : `Error al procesar el documento: ${error.message || JSON.stringify(error)}. Por favor, inténtalo de nuevo.`;
+
             setProcessing({
                 status: 'error',
-                message: `Error al procesar el documento: ${error.message || JSON.stringify(error)}. Por favor, inténtalo de nuevo.`
+                message: errorMessage
             });
             setTimeout(() => setView('HOME'), 10000);
         }
@@ -399,9 +335,13 @@ const App = () => {
             const updatedDoc = { ...currentDoc, analysis };
             setCurrentDoc(updatedDoc);
             setDocuments(prev => prev.map(d => d.id === updatedDoc.id ? updatedDoc : d));
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            alert("El análisis falló. Por favor, comprueba tu cuota de la clave API.");
+            const isRateLimit = error?.message?.includes('429') || error?.status === 429 || error?.code === 429;
+            const errorMessage = isRateLimit
+                ? "Límite de cuota excedido. Por favor, espera un momento y vuelve a intentarlo."
+                : "El análisis falló. Por favor, comprueba tu conexión o clave API.";
+            alert(errorMessage);
         }
     };
 
