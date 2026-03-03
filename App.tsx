@@ -8,10 +8,11 @@ let genAIInstance = null;
 
 const getGenAI = () => {
     if (!genAIInstance) {
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (typeof process !== 'undefined' && process.env && process.env.API_KEY) || '';
+        // Prioritize Vite's environment variables which are replaced at build time
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
 
         if (!apiKey || apiKey === 'undefined' || apiKey === 'process.env.API_KEY') {
-            throw new Error("Clave API no encontrada o no inyectada correctamente. Verifica la configuración de variables de entorno o el proceso de build.");
+            throw new Error("Clave API no encontrada. Asegúrate de que VITE_GEMINI_API_KEY esté configurada correctamente.");
         }
 
         genAIInstance = new GoogleGenAI(apiKey);
@@ -465,7 +466,7 @@ const App = () => {
                     <span>Escanear Nuevo Documento</span>
                 </button>
                 <p className="text-[10px] text-slate-300 text-center mt-4">
-                    Versión: 1.0.10 - {new Date().toLocaleString()}
+                    Versión: 1.0.12 - {new Date().toLocaleString()}
                 </p>
             </div>
         </div>
