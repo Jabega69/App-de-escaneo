@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { extractTextFromDocument, analyzeDocumentContent, AIProvider } from './services/aiService';
-import { Camera, FileText, Upload, Loader2, Sparkles, BrainCircuit, Copy, Share, ArrowLeft, Download, Cloud, ChevronRight, Plus, Clock } from 'lucide-react';
+import { Camera, FileText, Upload, Loader2, Sparkles, BrainCircuit, Copy, Share, ArrowLeft, Download, Cloud, ChevronRight, Plus, Clock, Settings, X, Check, AlertCircle } from 'lucide-react';
 
 // --- HELPERS ---
 
@@ -110,6 +110,83 @@ const ProcessingView = ({ state }) => {
                     Presupuesto de Pensamiento Activo
                 </div>
             )}
+        </div>
+    );
+};
+
+const SettingsModal = ({ isOpen, onClose }) => {
+    const [geminiKey, setGeminiKey] = useState(localStorage.getItem('manual_gemini_api_key') || '');
+    const [groqKey, setGroqKey] = useState(localStorage.getItem('manual_groq_api_key') || '');
+    const [saved, setSaved] = useState(false);
+
+    if (!isOpen) return null;
+
+    const handleSave = () => {
+        localStorage.setItem('manual_gemini_api_key', geminiKey.trim());
+        localStorage.setItem('manual_groq_api_key', groqKey.trim());
+        setSaved(true);
+        setTimeout(() => {
+            setSaved(false);
+            onClose();
+            window.location.reload(); // Reload to apply changes
+        }, 1500);
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+            <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-scale-in">
+                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                        <Settings size={18} className="text-slate-400" />
+                        Configuración de API
+                    </h3>
+                    <button onClick={onClose} className="p-2 -mr-2 text-slate-400 hover:text-slate-600">
+                        <X size={20} />
+                    </button>
+                </div>
+
+                <div className="p-6 space-y-6">
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Gemini API Key</label>
+                        <input
+                            type="password"
+                            value={geminiKey}
+                            onChange={(e) => setGeminiKey(e.target.value)}
+                            placeholder="Pega tu clave de Gemini aquí..."
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                        />
+                        <p className="text-[10px] text-slate-400">Si se deja vacío, se usará la clave por defecto del sistema.</p>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Groq API Key</label>
+                        <input
+                            type="password"
+                            value={groqKey}
+                            onChange={(e) => setGroqKey(e.target.value)}
+                            placeholder="Pega tu clave de Groq aquí..."
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                        />
+                        <p className="text-[10px] text-slate-400">Necesaria para usar el modelo Llama 3.2 Vision.</p>
+                    </div>
+
+                    <div className="bg-blue-50 p-4 rounded-2xl flex gap-3">
+                        <AlertCircle className="text-blue-500 shrink-0" size={18} />
+                        <p className="text-xs text-blue-700 leading-relaxed">
+                            Las claves se guardan localmente en tu navegador y nunca se envían a nuestros servidores.
+                        </p>
+                    </div>
+
+                    <button
+                        onClick={handleSave}
+                        disabled={saved}
+                        className={`w-full py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 ${saved ? 'bg-green-500 text-white' : 'bg-slate-900 text-white hover:bg-slate-800 active:scale-95'
+                            }`}
+                    >
+                        {saved ? <><Check size={20} /> Guardado</> : 'Guardar Configuración'}
+                    </button>
+                </div>
+            </div>
         </div>
     );
 };
@@ -267,6 +344,7 @@ const App = () => {
     const [rawFile, setRawFile] = useState(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [provider, setProvider] = useState<AIProvider>('gemini');
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     useEffect(() => {
         const saved = localStorage.getItem('documind_scans');
@@ -355,11 +433,19 @@ const App = () => {
     const renderHome = () => (
         <div className="flex flex-col h-full bg-slate-50">
             <header className="px-6 pt-12 pb-6 bg-white border-b border-slate-200">
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
-                        <FileText size={20} />
+                <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                            <FileText size={20} />
+                        </div>
+                        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">DocuMind</h1>
                     </div>
-                    <h1 className="text-2xl font-bold text-slate-800 tracking-tight">DocuMind</h1>
+                    <button
+                        onClick={() => setIsSettingsOpen(true)}
+                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+                    >
+                        <Settings size={24} />
+                    </button>
                 </div>
                 <p className="text-slate-500 text-sm font-medium">Escáner de Documentos con IA</p>
 
@@ -465,6 +551,11 @@ const App = () => {
                     isAnalyzing={isAnalyzing}
                 />
             )}
+
+            <SettingsModal
+                isOpen={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
+            />
         </div>
     );
 };

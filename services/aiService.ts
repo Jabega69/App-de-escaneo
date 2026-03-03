@@ -3,6 +3,11 @@ import { GoogleGenAI } from "@google/genai";
 export type AIProvider = 'gemini' | 'groq';
 
 const getApiKey = (provider: AIProvider): string => {
+    const manualKey = localStorage.getItem(`manual_${provider}_api_key`);
+    if (manualKey && manualKey.trim() !== '') {
+        return manualKey.trim();
+    }
+
     if (provider === 'gemini') {
         // @ts-ignore
         const apiKey: string = (typeof __GEMINI_API_KEY__ !== 'undefined' ? __GEMINI_API_KEY__ : '') ||
