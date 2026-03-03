@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { extractTextFromDocument, analyzeDocumentContent } from './services/geminiService';
+import { extractTextFromDocument, analyzeDocumentContent, AIProvider } from './services/aiService';
 import { Camera, FileText, Upload, Loader2, Sparkles, BrainCircuit, Copy, Share, ArrowLeft, Download, Cloud, ChevronRight, Plus, Clock } from 'lucide-react';
 
 // --- HELPERS ---
@@ -266,6 +266,7 @@ const App = () => {
     const [currentDoc, setCurrentDoc] = useState(null);
     const [rawFile, setRawFile] = useState(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [provider, setProvider] = useState<AIProvider>('gemini');
 
     useEffect(() => {
         const saved = localStorage.getItem('documind_scans');
@@ -290,9 +291,8 @@ const App = () => {
             const base64Data = await fileToBase64(file);
             setRawFile({ data: base64Data, mimeType: file.type });
 
-            setProcessing({ status: 'ocr', message: 'Extrayendo texto con Gemini Vision...' });
-
-            const text = await extractTextFromDocument(base64Data, file.type);
+            setProcessing({ status: 'ocr', message: `Extrayendo texto con ${provider === 'gemini' ? 'Gemini' : 'Llama (Groq)'}...` });
+            const text = await extractTextFromDocument(base64Data, file.type, provider);
 
             const newDoc = {
                 id: Date.now().toString(),
@@ -329,7 +329,8 @@ const App = () => {
             const analysis = await analyzeDocumentContent(
                 currentDoc.textData,
                 rawFile?.data,
-                rawFile?.mimeType
+                rawFile?.mimeType,
+                provider
             );
 
             const updatedDoc = { ...currentDoc, analysis };
@@ -361,6 +362,21 @@ const App = () => {
                     <h1 className="text-2xl font-bold text-slate-800 tracking-tight">DocuMind</h1>
                 </div>
                 <p className="text-slate-500 text-sm font-medium">Escáner de Documentos con IA</p>
+
+                <div className="mt-6 flex bg-slate-100 p-1 rounded-xl">
+                    <button
+                        onClick={() => setProvider('gemini')}
+                        className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${provider === 'gemini' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
+                    >
+                        Gemini 2.0
+                    </button>
+                    <button
+                        onClick={() => setProvider('groq')}
+                        className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${provider === 'groq' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-400'}`}
+                    >
+                        Groq (Llama 3.2)
+                    </button>
+                </div>
             </header>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
