@@ -163,8 +163,8 @@
           ? process.env.API_KEY
           : '';
 
-        if (!apiKey || apiKey === 'undefined') {
-          throw new Error("Clave API no encontrada. Verifica la configuración de variables de entorno.");
+        if (!apiKey || apiKey === 'undefined' || apiKey === 'process.env.API_KEY') {
+          throw new Error("Clave API no encontrada o no inyectada correctamente. Verifica la configuración de variables de entorno o el proceso de build.");
         }
 
         aiInstance = new GoogleGenAI({ apiKey });
@@ -622,6 +622,9 @@
               <Plus size={24} strokeWidth={3} />
               <span>Escanear Nuevo Documento</span>
             </button>
+            <p className="text-[10px] text-slate-300 text-center mt-4">
+              Versión: 1.0.3 - {new Date().toLocaleString()}
+            </p>
           </div>
         </div>
       );
