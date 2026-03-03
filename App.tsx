@@ -9,13 +9,14 @@ let genAIInstance = null;
 const getGenAI = () => {
     if (!genAIInstance) {
         // @ts-ignore
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY || window.__GEMINI_API_KEY__ || '';
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (typeof window !== 'undefined' ? window.__GEMINI_API_KEY__ : '') || '';
 
+        console.log("Debug - API Key source:", import.meta.env.VITE_GEMINI_API_KEY ? "env" : (typeof window !== 'undefined' && window.__GEMINI_API_KEY__ ? "window" : "none"));
         console.log("Debug - API Key length:", apiKey ? apiKey.length : 0);
         console.log("Debug - API Key prefix:", apiKey ? apiKey.substring(0, 4) + "..." : "empty");
 
         if (!apiKey || apiKey === 'undefined' || apiKey.trim() === '') {
-            throw new Error("Clave API no encontrada o vacía. Por favor, verifica los Secrets de GitHub (GEMINI_API_KEY) y que el despliegue se haya completado correctamente.");
+            throw new Error("Clave API no encontrada o vacía. Por favor, verifica los Secrets de GitHub (GEMINI_API_KEY) y que el despliegue se haya completado correctamente. Si estás en local, asegúrate de tener un archivo .env con VITE_GEMINI_API_KEY.");
         }
 
         genAIInstance = new GoogleGenAI(apiKey.trim());
