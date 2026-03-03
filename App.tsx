@@ -357,7 +357,7 @@ const App = () => {
             const newDoc = {
                 id: Date.now().toString(),
                 timestamp: Date.now(),
-                title: `Scan ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+                title: `Escaneo ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
                 textData: text,
                 type: file.type.includes('pdf') ? 'pdf' : 'image',
             };
