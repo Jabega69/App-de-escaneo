@@ -106,10 +106,9 @@ const analyzeWithGemini = async (text: string, base64Data?: string, mimeType?: s
 
 // Models confirmed active with vision/image support on Groq
 const GROQ_VISION_MODELS = [
+    'llama-3.2-11b-vision-instant',
+    'llama-3.2-90b-vision-instant',
     'meta-llama/llama-4-scout-17b-16e-instruct',
-    'meta-llama/llama-4-maverick-17b-128e-instruct',
-    'llama-3.2-11b-vision-preview',
-    'llama-3.2-90b-vision-preview',
 ];
 
 const callGroqWithFallback = async (buildPayload: (model: string) => any): Promise<any> => {
@@ -156,6 +155,10 @@ const callGroqWithFallback = async (buildPayload: (model: string) => any): Promi
 
 const extractTextWithGroq = async (base64Data: string, mimeType: string): Promise<string> => {
     return callWithRetry(async () => {
+        if (mimeType.includes('pdf')) {
+            throw new Error("Groq no admite archivos PDF para visión. Por favor, usa el proveedor Gemini.");
+        }
+
         const data = await callGroqWithFallback((model) => ({
             model,
             messages: [
@@ -163,7 +166,7 @@ const extractTextWithGroq = async (base64Data: string, mimeType: string): Promis
                     role: 'user',
                     content: [
                         { type: 'text', text: "Transcribe el texto de este documento exactamente como aparece. Mantén la estructura (listas, encabezados) usando Markdown. No incluyas ningún texto de introducción o cierre." },
-                        { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Data}`, detail: 'high' } }
+                        { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Data}` } }
                     ]
                 }
             ],
@@ -181,7 +184,11 @@ const analyzeWithGroq = async (text: string, base64Data?: string, mimeType?: str
         ];
 
         if (base64Data && mimeType) {
-            content.push({ type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Data}`, detail: 'high' } });
+            content.push({ type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Data}` } });
+        }
+
+        if (mimeType?.includes('pdf')) {
+            throw new Error("Groq no admite archivos PDF para visión. Por favor, usa el proveedor Gemini.");
         }
 
         const data = await callGroqWithFallback((model) => ({
