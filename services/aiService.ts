@@ -104,17 +104,17 @@ const analyzeWithGemini = async (text: string, base64Data?: string, mimeType?: s
 
 // --- GROQ IMPLEMENTATION ---
 
-const GROQ_MODELS = [
-    'llama-3.2-11b-vision-preview',
+// Models confirmed active as of March 2026 (from Groq console)
+const GROQ_VISION_MODELS = [
     'meta-llama/llama-4-scout-17b-16e-instruct',
-    'llava-v1.5-7b-4096-preview'
+    'meta-llama/llama-4-maverick-17b-128e-instruct',
 ];
 
-const callGroqWithFallback = async (payload: any): Promise<any> => {
+const callGroqWithFallback = async (buildPayload: (model: string) => any): Promise<any> => {
     const apiKey = getApiKey('groq');
     let lastError: any;
 
-    for (const model of GROQ_MODELS) {
+    for (const model of GROQ_VISION_MODELS) {
         try {
             const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
@@ -122,16 +122,14 @@ const callGroqWithFallback = async (payload: any): Promise<any> => {
                     'Authorization': `Bearer ${apiKey}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    ...payload,
-                    model: model
-                })
+                body: JSON.stringify(buildPayload(model))
             });
 
             if (response.status === 404 || response.status === 400) {
                 const errorData = await response.json();
-                console.warn(`Groq model ${model} failed (${response.status}): ${errorData.error?.message}. Trying next...`);
-                lastError = new Error(errorData.error?.message || `Model ${model} not found`);
+                const errMsg = errorData.error?.message || '';
+                console.warn(`Groq model ${model} failed (${response.status}): ${errMsg}. Trying next...`);
+                lastError = new Error(errMsg || `Model ${model} failed`);
                 continue;
             }
 
@@ -143,9 +141,10 @@ const callGroqWithFallback = async (payload: any): Promise<any> => {
             return await response.json();
         } catch (e: any) {
             lastError = e;
-            if (e.message?.includes('decommissioned') || e.message?.includes('not found') || e.message?.includes('does not exist')) {
-                continue;
-            }
+            const shouldContinue = e.message?.includes('decommissioned')
+                || e.message?.includes('not found')
+                || e.message?.includes('does not exist');
+            if (shouldContinue) continue;
             throw e;
         }
     }
@@ -154,19 +153,20 @@ const callGroqWithFallback = async (payload: any): Promise<any> => {
 
 const extractTextWithGroq = async (base64Data: string, mimeType: string): Promise<string> => {
     return callWithRetry(async () => {
-        const data = await callGroqWithFallback({
+        const data = await callGroqWithFallback((model) => ({
+            model,
             messages: [
                 {
                     role: 'user',
                     content: [
                         { type: 'text', text: "Transcribe el texto de este documento exactamente como aparece. Mantén la estructura (listas, encabezados) usando Markdown. No incluyas ningún texto de introducción o cierre." },
-                        { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Data}` } }
+                        { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Data}`, detail: 'high' } }
                     ]
                 }
             ],
             temperature: 0.1,
             max_tokens: 4096
-        });
+        }));
         return data.choices[0]?.message?.content || "No se pudo extraer ningún texto.";
     });
 };
@@ -178,14 +178,15 @@ const analyzeWithGroq = async (text: string, base64Data?: string, mimeType?: str
         ];
 
         if (base64Data && mimeType) {
-            content.push({ type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Data}` } });
+            content.push({ type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Data}`, detail: 'high' } });
         }
 
-        const data = await callGroqWithFallback({
+        const data = await callGroqWithFallback((model) => ({
+            model,
             messages: [{ role: 'user', content }],
             temperature: 0.1,
             max_tokens: 4096
-        });
+        }));
         return data.choices[0]?.message?.content || "El análisis falló.";
     });
 };
