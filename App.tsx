@@ -1,29 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GoogleGenAI } from "@google/genai";
+import { createClient } from "@google/genai";
 import { Camera, FileText, Upload, Loader2, Sparkles, BrainCircuit, Copy, Share, ArrowLeft, Download, Cloud, ChevronRight, Plus, Clock } from 'lucide-react';
 
 // --- SERVICE ---
 
-let aiInstance = null;
+let clientInstance = null;
 
-const getAI = () => {
-    if (!aiInstance) {
+const getClient = () => {
+    if (!clientInstance) {
         const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (typeof process !== 'undefined' && process.env && process.env.API_KEY) || '';
 
         if (!apiKey || apiKey === 'undefined' || apiKey === 'process.env.API_KEY') {
             throw new Error("Clave API no encontrada o no inyectada correctamente. Verifica la configuración de variables de entorno o el proceso de build.");
         }
 
-        aiInstance = new GoogleGenAI({ apiKey });
+        clientInstance = createClient({ apiKey, throwOnError: true });
     }
-    return aiInstance;
+    return clientInstance;
 };
 
 const extractTextFromDocument = async (base64Data, mimeType) => {
     try {
-        const ai = getAI();
+        const client = getClient();
         const modelId = 'gemini-1.5-flash';
-        const response = await ai.models.generateContent({
+        const response = await client.models.generateContent({
             model: modelId,
             contents: [{
                 role: 'user',
@@ -42,7 +42,7 @@ const extractTextFromDocument = async (base64Data, mimeType) => {
 
 const analyzeDocumentContent = async (text, base64Data, mimeType) => {
     try {
-        const ai = getAI();
+        const client = getClient();
         const modelId = 'gemini-1.5-pro';
 
         const parts = [{ text: `Analiza el contenido de este documento:\n\n${text}\n\nProporciona un resumen estructurado que incluya:\n1. Tipo de Documento\n2. Fechas Clave\n3. Entidades Principales (Personas/Empresas)\n4. Tareas Pendientes o Resumen` }];
@@ -53,7 +53,7 @@ const analyzeDocumentContent = async (text, base64Data, mimeType) => {
             });
         }
 
-        const response = await ai.models.generateContent({
+        const response = await client.models.generateContent({
             model: modelId,
             contents: [{ role: 'user', parts }]
         });
@@ -374,9 +374,9 @@ const App = () => {
             console.error(error);
             setProcessing({
                 status: 'error',
-                message: `Error al procesar el documento: ${error.message || 'Error desconocido'}. Por favor, inténtalo de nuevo.`
+                message: `Error al procesar el documento: ${error.message || JSON.stringify(error)}. Por favor, inténtalo de nuevo.`
             });
-            setTimeout(() => setView('HOME'), 5000);
+            setTimeout(() => setView('HOME'), 10000);
         }
     };
 
@@ -469,7 +469,7 @@ const App = () => {
                     <span>Escanear Nuevo Documento</span>
                 </button>
                 <p className="text-[10px] text-slate-300 text-center mt-4">
-                    Versión: 1.0.5 - {new Date().toLocaleString()}
+                    Versión: 1.0.6 - {new Date().toLocaleString()}
                 </p>
             </div>
         </div>
