@@ -4,29 +4,34 @@ import { Camera, FileText, Upload, Loader2, Sparkles, BrainCircuit, Copy, Share,
 
 // --- SERVICE ---
 
-let genAIInstance = null;
-
-const getGenAI = () => {
-    if (!genAIInstance) {
+const getApiKey = () => {
+    // @ts-ignore
+    const apiKey = (typeof __GEMINI_API_KEY__ !== 'undefined' ? __GEMINI_API_KEY__ : '') ||
         // @ts-ignore
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (typeof window !== 'undefined' ? window.__GEMINI_API_KEY__ : '') || '';
+        (import.meta.env.VITE_GEMINI_API_KEY) ||
+        // @ts-ignore
+        (typeof window !== 'undefined' ? window.__GEMINI_API_KEY__ : '') || '';
 
-        console.log("Debug - API Key source:", import.meta.env.VITE_GEMINI_API_KEY ? "env" : (typeof window !== 'undefined' && window.__GEMINI_API_KEY__ ? "window" : "none"));
-        console.log("Debug - API Key length:", apiKey ? apiKey.length : 0);
-        console.log("Debug - API Key prefix:", apiKey ? apiKey.substring(0, 4) + "..." : "empty");
+    console.log("Debug - API Key source check:",
+        // @ts-ignore
+        typeof __GEMINI_API_KEY__ !== 'undefined' ? "global" :
+            (import.meta.env.VITE_GEMINI_API_KEY ? "env" :
+                // @ts-ignore
+                (typeof window !== 'undefined' && window.__GEMINI_API_KEY__ ? "window" : "none")));
 
-        if (!apiKey || apiKey === 'undefined' || apiKey.trim() === '') {
-            throw new Error("Clave API no encontrada o vacía. Por favor, verifica los Secrets de GitHub (GEMINI_API_KEY) y que el despliegue se haya completado correctamente. Si estás en local, asegúrate de tener un archivo .env con VITE_GEMINI_API_KEY.");
-        }
+    console.log("Debug - API Key length:", apiKey ? apiKey.length : 0);
+    console.log("Debug - API Key prefix:", apiKey ? apiKey.substring(0, 4) + "..." : "empty");
 
-        genAIInstance = new GoogleGenAI(apiKey.trim());
+    if (!apiKey || apiKey === 'undefined' || apiKey.trim() === '') {
+        throw new Error("Clave API no encontrada. Verifica los Secrets de GitHub (GEMINI_API_KEY).");
     }
-    return genAIInstance;
+    return apiKey.trim();
 };
 
 const extractTextFromDocument = async (base64Data, mimeType) => {
     try {
-        const genAI = getGenAI();
+        const apiKey = getApiKey();
+        const genAI = new GoogleGenAI(apiKey);
         const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
         const result = await model.generateContent([
@@ -44,7 +49,8 @@ const extractTextFromDocument = async (base64Data, mimeType) => {
 
 const analyzeDocumentContent = async (text, base64Data, mimeType) => {
     try {
-        const genAI = getGenAI();
+        const apiKey = getApiKey();
+        const genAI = new GoogleGenAI(apiKey);
         const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
 
         const promptParts = [
