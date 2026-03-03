@@ -22,7 +22,7 @@ const getAI = () => {
 const extractTextFromDocument = async (base64Data, mimeType) => {
     try {
         const ai = getAI();
-        const modelId = 'gemini-2.0-flash';
+        const modelId = 'gemini-1.5-flash';
         const response = await ai.models.generateContent({
             model: modelId,
             contents: [{
