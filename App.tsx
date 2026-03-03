@@ -466,7 +466,7 @@ const App = () => {
                     <span>Escanear Nuevo Documento</span>
                 </button>
                 <p className="text-[10px] text-slate-300 text-center mt-4">
-                    Versión: 1.0.13 - {new Date().toLocaleString()}
+                    Versión: 1.0.14 - {new Date().toLocaleString()}
                 </p>
             </div>
         </div>
