@@ -9,9 +9,9 @@ let genAIInstance = null;
 const getGenAI = () => {
     if (!genAIInstance) {
         // @ts-ignore
-        const apiKey = (typeof __GEMINI_API_KEY__ !== 'undefined' ? __GEMINI_API_KEY__ : '') || import.meta.env.VITE_GEMINI_API_KEY || '';
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
 
-        if (!apiKey || apiKey === 'undefined' || apiKey === 'process.env.API_KEY') {
+        if (!apiKey || apiKey === 'undefined') {
             throw new Error("Clave API no encontrada. Por favor, verifica los Secrets de GitHub.");
         }
 
