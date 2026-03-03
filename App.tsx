@@ -1,39 +1,36 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createClient } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import { Camera, FileText, Upload, Loader2, Sparkles, BrainCircuit, Copy, Share, ArrowLeft, Download, Cloud, ChevronRight, Plus, Clock } from 'lucide-react';
 
 // --- SERVICE ---
 
-let clientInstance = null;
+let genAIInstance = null;
 
-const getClient = () => {
-    if (!clientInstance) {
+const getGenAI = () => {
+    if (!genAIInstance) {
         const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (typeof process !== 'undefined' && process.env && process.env.API_KEY) || '';
 
         if (!apiKey || apiKey === 'undefined' || apiKey === 'process.env.API_KEY') {
             throw new Error("Clave API no encontrada o no inyectada correctamente. Verifica la configuración de variables de entorno o el proceso de build.");
         }
 
-        clientInstance = createClient({ apiKey, throwOnError: true });
+        genAIInstance = new GoogleGenAI(apiKey);
     }
-    return clientInstance;
+    return genAIInstance;
 };
 
 const extractTextFromDocument = async (base64Data, mimeType) => {
     try {
-        const client = getClient();
-        const modelId = 'gemini-1.5-flash';
-        const response = await client.models.generateContent({
-            model: modelId,
-            contents: [{
-                role: 'user',
-                parts: [
-                    { inlineData: { mimeType: mimeType, data: base64Data } },
-                    { text: "Transcribe el texto de este documento exactamente como aparece. Mantén la estructura (listas, encabezados) usando Markdown. No incluyas ningún texto de introducción o cierre." }
-                ]
-            }]
-        });
-        return response.text || "No se pudo extraer ningún texto.";
+        const genAI = getGenAI();
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+        const result = await model.generateContent([
+            { inlineData: { mimeType: mimeType, data: base64Data } },
+            { text: "Transcribe el texto de este documento exactamente como aparece. Mantén la estructura (listas, encabezados) usando Markdown. No incluyas ningún texto de introducción o cierre." }
+        ]);
+
+        const response = await result.response;
+        return response.text() || "No se pudo extraer ningún texto.";
     } catch (error) {
         console.error("Gemini OCR Error:", error);
         throw error;
@@ -42,23 +39,22 @@ const extractTextFromDocument = async (base64Data, mimeType) => {
 
 const analyzeDocumentContent = async (text, base64Data, mimeType) => {
     try {
-        const client = getClient();
-        const modelId = 'gemini-1.5-pro';
+        const genAI = getGenAI();
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
 
-        const parts = [{ text: `Analiza el contenido de este documento:\n\n${text}\n\nProporciona un resumen estructurado que incluya:\n1. Tipo de Documento\n2. Fechas Clave\n3. Entidades Principales (Personas/Empresas)\n4. Tareas Pendientes o Resumen` }];
+        const promptParts = [
+            { text: `Analiza el contenido de este documento:\n\n${text}\n\nProporciona un resumen estructurado que incluya:\n1. Tipo de Documento\n2. Fechas Clave\n3. Entidades Principales (Personas/Empresas)\n4. Tareas Pendientes o Resumen` }
+        ];
 
         if (base64Data && mimeType) {
-            parts.unshift({
+            promptParts.unshift({
                 inlineData: { mimeType: mimeType, data: base64Data }
             });
         }
 
-        const response = await client.models.generateContent({
-            model: modelId,
-            contents: [{ role: 'user', parts }]
-        });
-
-        return response.text || "El análisis falló.";
+        const result = await model.generateContent(promptParts);
+        const response = await result.response;
+        return response.text() || "El análisis falló.";
     } catch (error) {
         console.error("Gemini Analysis Error:", error);
         throw error;
@@ -469,7 +465,7 @@ const App = () => {
                     <span>Escanear Nuevo Documento</span>
                 </button>
                 <p className="text-[10px] text-slate-300 text-center mt-4">
-                    Versión: 1.0.6 - {new Date().toLocaleString()}
+                    Versión: 1.0.7 - {new Date().toLocaleString()}
                 </p>
             </div>
         </div>
