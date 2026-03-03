@@ -437,7 +437,7 @@ const App = () => {
             const isRateLimit = error?.message?.includes('429') || error?.status === 429 || error?.code === 429;
             const errorMessage = isRateLimit
                 ? "Límite de cuota excedido. Por favor, espera un momento y vuelve a intentarlo."
-                : "El análisis falló. Por favor, comprueba tu conexión o clave API.";
+                : `El análisis falló: ${error.message || "Error desconocido"}. Por favor, comprueba tu conexión o clave API.`;
             alert(errorMessage);
         }
     };
