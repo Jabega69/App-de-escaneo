@@ -162,6 +162,11 @@
         const apiKey = (typeof process !== 'undefined' && process.env && process.env.API_KEY)
           ? process.env.API_KEY
           : '';
+
+        if (!apiKey || apiKey === 'undefined') {
+          throw new Error("Clave API no encontrada. Verifica la configuración de variables de entorno.");
+        }
+
         aiInstance = new GoogleGenAI({ apiKey });
       }
       return aiInstance;
@@ -350,7 +355,7 @@
         const fileName = `documind-${doc.id}.txt`;
         const file = new File([doc.textData], fileName, { type: 'text/plain' });
 
-        // @ts-ignore 
+        // @ts-ignore
         if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
           try {
             await navigator.share({
@@ -520,8 +525,11 @@
 
         } catch (error) {
           console.error(error);
-          setProcessing({ status: 'error', message: 'Error al procesar el documento. Por favor, inténtalo de nuevo.' });
-          setTimeout(() => setView('HOME'), 3000);
+          setProcessing({
+            status: 'error',
+            message: `Error al procesar el documento: ${error.message || 'Error desconocido'}. Por favor, inténtalo de nuevo.`
+          });
+          setTimeout(() => setView('HOME'), 5000);
         }
       };
 
