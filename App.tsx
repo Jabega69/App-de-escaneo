@@ -472,7 +472,7 @@ const App = () => {
                         onClick={() => setProvider('gemini')}
                         className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${provider === 'gemini' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
                     >
-                        Gemini 2.0
+                        Gemini 2.5
                         {!hasKeys.gemini && <AlertCircle size={12} className="text-red-500" />}
                     </button>
                     <button

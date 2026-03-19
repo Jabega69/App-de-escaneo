@@ -60,7 +60,7 @@ const extractTextWithGemini = async (base64Data: string, mimeType: string): Prom
 
     return callWithRetry(async () => {
         const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
+            model: 'gemini-2.5-flash',
             contents: [
                 {
                     role: 'user',
@@ -89,7 +89,7 @@ const analyzeWithGemini = async (text: string, base64Data?: string, mimeType?: s
         }
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
+            model: 'gemini-2.5-flash',
             contents: [
                 {
                     role: 'user',
